@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Declaring Variables
+table0="customer"
+
+# Checking table if exists in Hbase
+echo "exists '$table0'" | hbase shell > log
+cat log | grep "Table $table0 does exist"
+if [ $? = 0 ];then
+    echo "********************************************"
+	echo "********** table already exists ************"
+	echo "********* first need to drop table *********"
+	echo "********************************************"
+	# Drop the table, it already exists
+    echo "disable '$table0'" | hbase shell
+    echo "drop '$table0'" | hbase shell
+	echo "********************************************"
+	echo "************ creating table ****************"
+	echo "********************************************"
+    echo "create '$table0','details'" | hbase shell
+
+else
+	# Create the table
+    echo "********************************************"
+	echo "************ creating table ****************"
+	echo "********************************************"
+    echo "create '$table0','details'" | hbase shell
+fi
+
+	# Creating, copying and populating the table0 table
+	echo $(hadoop fs -mkdir -p /user/acadgild/customer/)
+	echo $(hadoop fs -put /home/acadgild/hbase/customers.dat /user/acadgild/customer)
+	echo $(hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=","  -Dimporttsv.columns="HBASE_ROW_KEY,details:name,details:location,details:age" $table0 /user/acadgild/customer/customers.dat)
+	echo $(hadoop fs -rm -r /user/acadgild/customer)
+	echo "scan '$table0'" | hbase shell
+exit
